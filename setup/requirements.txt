@@ -1,4 +1,3 @@
 qbittorrent-api
 pyyaml
 rarfile
-notarealrequqirementjustatesttoseeifitworks

@@ -17,13 +17,13 @@ fi
 clone_dir="temp"
 
 # if temp/requirements.txt is different, set a var to update the venv later
+echo pwd
 if ! cmp -s setup/requirements.txt "$clone_dir"/setup/requirements.txt; then
-    echo "requirements.txt is different."
     update_venv=true
 fi
 
 echo "Updating files..."
-rsync -av --delete \
+rsync -av \
   --exclude "config.yaml" \
   --exclude "setup/pat.txt" \
   --exclude "$clone_dir" \

@@ -1,6 +1,9 @@
+import os
+import sys
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+sys.path.append(parent_dir)
 from lib.lib import load_config, connect_to_qbittorrent, log_text, format_current_time, log_error
 from lib.torrent import Torrent
-import sys
 
 torrent_hash = sys.argv[1]
 torrent_name = sys.argv[2]

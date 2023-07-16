@@ -17,7 +17,7 @@ fi
 clone_dir="temp"
 
 # if temp/requirements.txt is different, set a var to update the venv later
-if ! cmp -s requirements.txt "$clone_dir"/requirements.txt; then
+if ! cmp -s setup/requirements.txt "$clone_dir"/setup/requirements.txt; then
     echo "requirements.txt is different."
     update_venv=true
 fi
@@ -37,7 +37,7 @@ rm -rf "$clone_dir"
 if [ "$update_venv" = true ]; then
     echo "Updating venv..."
     source venv/bin/activate
-    pip install -r requirements.txt
+    pip install -r setup/requirements.txt
 fi
 
 

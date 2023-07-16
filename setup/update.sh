@@ -17,7 +17,6 @@ fi
 
 
 # if temp/requirements.txt is different, set a var to update the venv later
-echo pwd
 if ! cmp -s setup/requirements.txt "$clone_dir"/setup/requirements.txt; then
     update_venv=true
 fi

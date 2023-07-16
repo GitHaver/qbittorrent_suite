@@ -3,10 +3,11 @@ cd ..
 username="GitHaver"
 pat=$(cat pat.txt)
 repo="github.com/GitHaver/qbittorrent_suite.git"
+clone_dir="temp"
 
 # Clone the repo with an echo statement, to a temp folder
 echo "Cloning repo..."
-git clone https://"$username":"$pat"@"$repo" temp
+git clone https://"$username":"$pat"@"$repo" $clone_dir
 
 # if any errors, exit
 if [ $? -ne 0 ]; then
@@ -14,7 +15,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-clone_dir="temp"
 
 # if temp/requirements.txt is different, set a var to update the venv later
 echo pwd
@@ -28,10 +28,10 @@ rsync -av \
   --exclude "setup/pat.txt" \
   --exclude "$clone_dir" \
   --exclude "venv" \
-  "$clone_dir/"
+  "$clone_dir/" "./"
 
 # delete the temp folder
-rm -rf "$clone_dir"
+rm -rf temp
 
 # if update_venv is true, activate and update the venv
 if [ "$update_venv" = true ]; then

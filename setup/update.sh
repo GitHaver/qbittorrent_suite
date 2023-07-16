@@ -16,10 +16,28 @@ fi
 
 clone_dir="temp"
 
+# if temp/requirements.txt is different, set a var to update the venv later
+if ! cmp -s requirements.txt "$clone_dir"/requirements.txt; then
+    echo "requirements.txt is different."
+    update_venv=true
+fi
+
 echo "Updating files..."
-rsync -av --delete --exclude "config.yaml" --exclude "setup/pat.txt" --exclude "$clone_dir" "$clone_dir/"
+rsync -av --delete \
+  --exclude "config.yaml" \
+  --exclude "setup/pat.txt" \
+  --exclude "$clone_dir" \
+  --exclude "venv" \
+  "$clone_dir/"
 
 # delete the temp folder
 rm -rf "$clone_dir"
+
+# if update_venv is true, activate and update the venv
+if [ "$update_venv" = true ]; then
+    echo "Updating venv..."
+    source venv/bin/activate
+    pip install -r requirements.txt
+fi
 
 

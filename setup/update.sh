@@ -1,7 +1,7 @@
 cd ..
 
 username="GitHaver"
-pat=$(cat pat.txt)
+pat=$(cat setup/pat.txt)
 repo="github.com/GitHaver/qbittorrent_suite.git"
 clone_dir="temp"
 

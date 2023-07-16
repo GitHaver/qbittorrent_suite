@@ -40,4 +40,8 @@ if [ "$update_venv" = true ]; then
     pip install -r setup/requirements.txt
 fi
 
+chmod +x seeding_checker/run.sh
+chmod +x file_manager/run.sh
+chmod +x setup/setup.sh
+chmod +x setup/update.sh
 

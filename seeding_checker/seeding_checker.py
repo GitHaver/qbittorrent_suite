@@ -85,48 +85,58 @@ for torrent in torrents:
 depth = 0
 deleted_torrents = 0
 
+torrents_to_delete = []
+
+
 if deletable_non_private:
-    depth = log_text(depth, f"Deleting non-private tracker torrents...")
     for torrent in non_private_torrents:
-        log_text(depth, f"Deleted: {torrent.name}")
-        torrent.delete()
-        deleted_torrents += 1
-        total_size += torrent.size
+        torrents_to_delete.append(torrent)
 
 
 depth = 0
 depth = log_text(depth, f"Checking private tracker torrents...")
 for tracker in private_torrents.keys():
     depth = log_text(depth, f"Checking {tracker}...")
-    log_text(depth, f"Min torrents for tracker: {private_trackers[tracker]['max_torrents']}")
+
+    torrents_to_seed = private_trackers[tracker]['max_torrents']
+    log_text(depth, f"Min torrents for tracker: {torrents_to_seed}")
+
     log_text(depth, f"Current torrents for tracker: {len(private_torrents[tracker])}")
+
     tracker_deletable = [torrent for torrent in private_torrents[tracker] if torrent.deletable]
     log_text(depth, f"Deletable torrents for tracker: {len(tracker_deletable)}")
-    torrent_difference = len(private_torrents[tracker]) - private_trackers[tracker]['max_torrents']
+
+    torrent_difference = len(private_torrents[tracker]) - torrents_to_seed
     log_text(depth, f"Deletable torrents within limit: {torrent_difference}")
+
     if torrent_difference <= 0:
         log_text(depth, f"Torrent count is within the limit for {tracker}.")
         continue
+
     if torrent_difference > len(deletable_torrents):
         num_deletable_torrents = len(deletable_torrents)
-        log_text(depth, f"There are only {num_deletable_torrents} deletable torrents to keep the count within {private_trackers[tracker]['max_torrents']}.")
+        log_text(depth, f"There are {num_deletable_torrents} deletable torrents within {torrents_to_seed}.")
     else:
-        log_text(depth, f"There are {torrent_difference} torrents to delete within the limit of {private_trackers[tracker]['max_torrents']}.")
+        log_text(depth, f"There are {torrent_difference} torrents to delete within the limit of {torrents_to_seed}.")
         num_deletable_torrents = torrent_difference
+
     if num_deletable_torrents > 0:
         depth = log_text(depth, f"Too many torrents for {tracker}, deleting least seeded torrents...")
         private_torrents[tracker].sort(key=lambda x: x.ratio)
         for torrent in private_torrents[tracker]:
             if torrent.deletable:
                 if deleted_torrents < num_deletable_torrents:
-                    torrent.delete()
-                    deleted_torrents += 1
-                    total_size += torrent.size
-                    log_text(depth, f"Deleted: {torrent.name}...")
+                    torrents_to_delete.append(torrent)
                 else:
                     break
             else:
                 continue
+
+for torrent in torrents_to_delete:
+    log_text(depth, f"Deleting {torrent.name}...")
+    torrent.delete()
+    deleted_torrents += 1
+    total_size += torrent.size
 
 
 # Wrap things up with a summary

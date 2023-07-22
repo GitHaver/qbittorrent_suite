@@ -36,6 +36,8 @@ class Torrent:
         self.private_tracker = None
         self.seed_for = 0
 
+        self.deletable = False
+
         # set the basic attributes
         self.set_torrent_data()
 
@@ -53,6 +55,8 @@ class Torrent:
         if 'Moved' in self.tags:
             self.moved = True
         self.check_private_tracker()
+        if 'Seeded' in self.tags:
+            self.seeded = True
 
     # Get the torrent ratio and check if it's above the seeder ratio as set in config
     def ratio_check(self):
@@ -60,9 +64,12 @@ class Torrent:
         if "Seeder" in self.tags:
             return True
         else:  # Check if the torrent has a ratio of 0.01 or greater, if so, mark it as a seeder.
-            if self.ratio >= self.seeder_ratio:
-                self.add_tag("Seeder")
-                return True
+            if self.private_tracker:
+                if self.ratio >= self.seeder_ratio:
+                    self.add_tag("Seeder")
+                    return True
+                else:
+                    return False
             else:
                 return False
 

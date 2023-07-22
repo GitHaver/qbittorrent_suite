@@ -21,6 +21,7 @@ class Torrent:
         self.containing_dir = None
         self.tags = None
         self.moved = False
+        self.complete = False
 
         # attributes used for moving torrents
         self.media_type = None  # Movie, TV, Anime, Music or Other
@@ -57,6 +58,8 @@ class Torrent:
         self.check_private_tracker()
         if 'Seeded' in self.tags:
             self.seeded = True
+        if self.torrent_data['amount_left'] == 0:
+            self.complete = True
 
     # Get the torrent ratio and check if it's above the seeder ratio as set in config
     def ratio_check(self):

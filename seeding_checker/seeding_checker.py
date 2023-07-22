@@ -12,20 +12,13 @@ config = load_config()
 conn_info = config['connection_info']
 qbit_client = connect_to_qbittorrent(**conn_info)
 
-completed_torrents = []
-
 depth = log_text(depth, "Reading torrents...")
-for torrent in qbit_client.torrents_info():
-    if torrent['completion_on']:
-        completed_torrents.append(torrent)
-    else:
-        continue
-
-if not completed_torrents:
-    depth = log_text(depth, "No completed torrents.")
+torrents = qbit_client.torrents_info()
+if len(torrents) == 0:
+    depth = log_text(depth, "No torrents found.")
     sys.exit()
 else:
-    depth = log_text(depth, f"{len(completed_torrents)} completed torrents found.\n")
+    depth = log_text(depth, f"{len(torrents)} torrents found.\n")
 
 initial_depth = depth
 torrents_seeded = 0
@@ -35,14 +28,27 @@ seeder_ratio = config['seeder_ratio']
 deletable_torrents = []
 all_torrents = []
 
-for torrent in completed_torrents:
+private_trackers = load_config('private_trackers')
+private_torrents = {}
+non_private_torrents = []
+deletable_non_private = False
+
+for torrent in torrents:
     torrent = Torrent(torrent['hash'], qbit_client)
     all_torrents.append(torrent)
     depth = log_text(initial_depth, f"{torrent.name} loaded...")
 
+    if not torrent.complete:
+        continue
+
     # Check if the torrent belongs to a private tracker
     if torrent.private_tracker:
         depth = log_text(depth, f"-is a {torrent.private_tracker} torrent, checking seeding...")
+        # Check if the torrent is already in the private_torrents dict, if not, add it.
+        if torrent.private_tracker not in private_torrents:
+            private_torrents[torrent.private_tracker] = [torrent]
+        else:
+            private_torrents[torrent.private_tracker].append(torrent)
         # Check if the torrent is a seeder and could help maintain a positive ratio
         if torrent.ratio_check():
             log_text(depth, f"-SEEDER: skipped.\n")
@@ -58,40 +64,38 @@ for torrent in completed_torrents:
             log_text(depth, f"-has seeded for sufficient time...")
     else:
         log_text(depth, f"-NOT A PRIVATE TRACKER TORRENT")
+        deletable_non_private = True
+        non_private_torrents.append(torrent)
 
     depth -= 1
     # Check if the media files have been moved so we can see if we can delete them.
     if torrent.moved:
+        torrent.deletable = True
         deletable_torrents.append(torrent)
         log_text(depth, f"-CAN BE DELETED.\n")
-        total_size += torrent.size
     else:
-        log_text(depth, f"-NOT MOVED: marked as Seeded.\n")
+        torrent.add_tag("Relocate")
+        if torrent.private_tracker:
+            log_text(depth, f"-NOT YET MOVED: Marked as Seeded.\n")
+        else:
+            log_text(depth, f"-NOT YET MOVED: Please move.\n")
         torrent.add_tag("Seeded")
         torrents_seeded += 1
 
-
-private_trackers = load_config('private_trackers')
-
-private_torrents = {}
 depth = 0
 deleted_torrents = 0
-for torrent in deletable_torrents:
-    torrent.deletable = True
-    if torrent.private_tracker:
-        if torrent.private_tracker in private_torrents:
-            private_torrents[torrent.private_tracker].append(torrent)
-        else:
-            private_torrents[torrent.private_tracker] = [torrent]
 
-for torrent in all_torrents:
-    if torrent.private_tracker in private_torrents:
-        if torrent not in private_torrents[torrent.private_tracker]:
-            private_torrents[torrent.private_tracker].append(torrent)
-    else:
-        private_torrents[torrent.private_tracker] = [torrent]
+if deletable_non_private:
+    depth = log_text(depth, f"Deleting non-private tracker torrents...")
+    for torrent in non_private_torrents:
+        log_text(depth, f"Deleted: {torrent.name}")
+        # torrent.delete()
+        deleted_torrents += 1
+        total_size += torrent.size
 
-depth = log_text(depth, f"Checking deletable torrents per tracker...")
+
+depth = 0
+depth = log_text(depth, f"Checking private tracker torrents...")
 for tracker in private_torrents.keys():
     depth = log_text(depth, f"Checking {tracker}...")
     log_text(depth, f"Min torrents for tracker: {private_trackers[tracker]['max_torrents']}")
@@ -115,9 +119,10 @@ for tracker in private_torrents.keys():
         for torrent in private_torrents[tracker]:
             if torrent.deletable:
                 if deleted_torrents < num_deletable_torrents:
-                    torrent.delete()
+                    # torrent.delete()
                     deleted_torrents += 1
-                    log_text(depth, f"Deleted {torrent.name}...")
+                    total_size += torrent.size
+                    log_text(depth, f"Deleted: {torrent.name}...")
                 else:
                     break
             else:

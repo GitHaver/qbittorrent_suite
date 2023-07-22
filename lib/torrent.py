@@ -58,6 +58,9 @@ class Torrent:
         self.check_private_tracker()
         if 'Seeded' in self.tags:
             self.seeded = True
+        else:
+            if self.seeding_time >= self.seed_for:
+                self.seeded = True
         if self.torrent_data['amount_left'] == 0:
             self.complete = True
 
@@ -66,7 +69,7 @@ class Torrent:
         self.ratio = self.torrent_data['ratio']
         if "Seeder" in self.tags:
             return True
-        else:  # Check if the torrent has a ratio of 0.01 or greater, if so, mark it as a seeder.
+        else:  # Check if the torrent has a sufficient ratio, add 'seeder' tag.
             if self.private_tracker:
                 if self.ratio >= self.seeder_ratio:
                     self.add_tag("Seeder")
@@ -75,14 +78,6 @@ class Torrent:
                     return False
             else:
                 return False
-
-    # Get the seeding time and check if it has seeded for the required time as set in config['private_trackers']
-    def seeding_time_check(self):
-        if self.seeding_time >= self.seed_for:
-            self.seeded = True
-            return True
-        else:
-            return False
 
     # Lookup the torrent files in the torrent, and get the media files
     def get_torrent_files(self):

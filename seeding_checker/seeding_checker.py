@@ -89,7 +89,7 @@ if deletable_non_private:
     depth = log_text(depth, f"Deleting non-private tracker torrents...")
     for torrent in non_private_torrents:
         log_text(depth, f"Deleted: {torrent.name}")
-        # torrent.delete()
+        torrent.delete()
         deleted_torrents += 1
         total_size += torrent.size
 
@@ -119,7 +119,7 @@ for tracker in private_torrents.keys():
         for torrent in private_torrents[tracker]:
             if torrent.deletable:
                 if deleted_torrents < num_deletable_torrents:
-                    # torrent.delete()
+                    torrent.delete()
                     deleted_torrents += 1
                     total_size += torrent.size
                     log_text(depth, f"Deleted: {torrent.name}...")

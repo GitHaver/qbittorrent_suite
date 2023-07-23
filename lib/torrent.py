@@ -1,6 +1,8 @@
 import os
 import shutil
 import rarfile
+import datetime
+import pytz
 
 from lib.lib import load_config
 from lib.series import Series
@@ -22,6 +24,7 @@ class Torrent:
         self.tags = None
         self.moved = False
         self.complete = False
+        self.last_active = None
 
         # attributes used for moving torrents
         self.media_type = None  # Movie, TV, Anime, Music or Other
@@ -52,6 +55,7 @@ class Torrent:
         self.containing_dir = self.torrent_data['content_path']
         self.seeding_time = self.torrent_data['seeding_time']
         self.size = self.torrent_data['total_size']
+        self.last_active = self.torrent_data['last_activity']
         self.get_torrent_tags()
         if 'Moved' in self.tags:
             self.moved = True
@@ -67,17 +71,36 @@ class Torrent:
     # Get the torrent ratio and check if it's above the seeder ratio as set in config
     def ratio_check(self):
         self.ratio = self.torrent_data['ratio']
+        last_active_date = datetime.datetime.fromtimestamp(self.last_active, tz=pytz.timezone('Australia/Sydney'))
+        current_time = datetime.datetime.now(tz=pytz.timezone('Australia/Sydney'))
+        time_diff = (current_time - last_active_date).days
+        print(f"Time diff: {time_diff}")
+
         if "Seeder" in self.tags:
-            return True
-        else:  # Check if the torrent has a sufficient ratio, add 'seeder' tag.
-            if self.private_tracker:
-                if self.ratio >= self.seeder_ratio:
-                    self.add_tag("Seeder")
-                    return True
-                else:
-                    return False
+            self.handle_seeder(time_diff)
+        else:
+            self.handle_non_seeder(time_diff)
+
+    def handle_seeder(self, time_diff):
+        if time_diff >= 7:
+            self.remove_tag("Seeder")
+            self.add_tag("Inactive")
+            return False
+        return True
+
+    def handle_non_seeder(self, time_diff):
+        if self.private_tracker:
+            if self.ratio >= self.seeder_ratio and time_diff <= 7:
+                if "Inactive" in self.tags:
+                    self.remove_tag("Inactive")
+                self.add_tag("Seeder")
+                return True
             else:
+                if time_diff >= 7:
+                    self.add_tag("Inactive")
                 return False
+        else:
+            return False
 
     # Lookup the torrent files in the torrent, and get the media files
     def get_torrent_files(self):
@@ -115,6 +138,10 @@ class Torrent:
     # Add a tag to the torrent
     def add_tag(self, tag):
         self.qbit_client.torrents_add_tags(torrent_hashes=self.hash, tags=tag)
+        self.get_torrent_tags()
+
+    def remove_tag(self, tag):
+        self.qbit_client.torrents_remove_tags(torrent_hashes=self.hash, tags=tag)
         self.get_torrent_tags()
 
     # Get the torrent tags

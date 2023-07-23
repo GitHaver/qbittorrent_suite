@@ -126,7 +126,7 @@ for tracker in private_torrents.keys():
 total_size = 0
 depth = 1
 for torrent in torrents_to_delete:
-    # torrent.delete()
+    torrent.delete()
     log_text(depth, f"DELETED: {torrent.name}")
     deleted_torrents += 1
     total_size += torrent.size

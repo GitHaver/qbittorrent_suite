@@ -1,3 +1,5 @@
+cd ..
+
 if [ ! -d "venv" ]; then
     echo "Creating virtual environment..."
     cd ..

@@ -3,17 +3,16 @@ import shutil
 import rarfile
 import datetime
 import pytz
-
-from lib.lib import load_config
-from lib.series import Series
-
+from classes.series import Series
 
 class Torrent:
-    def __init__(self, t_hash, qbit_client):
+    def __init__(self, t_hash, qbit_client, config):
         self.hash = t_hash
         self.name = None
         self.qbit_client = qbit_client
-        self.seeder_ratio = load_config('seeder_ratio')
+
+        self.config = config
+        self.seeder_ratio = self.config.seeder_ratio
 
         self.torrent_data = None
         # basic attributes set in set_torrent_data
@@ -37,6 +36,7 @@ class Torrent:
 
         # attributes used for checking seeding
         self.seeded = False
+        self.seeder = False
         self.private_tracker = None
         self.seed_for = 0
 
@@ -57,50 +57,47 @@ class Torrent:
         self.size = self.torrent_data['total_size']
         self.last_active = self.torrent_data['last_activity']
         self.get_torrent_tags()
-        if 'Moved' in self.tags:
-            self.moved = True
+        if self.torrent_data['amount_left'] == 0:
+            self.complete = True
+            if 'Moved' in self.tags:
+                self.moved = True
+                if 'Relocate' in self.tags:
+                    self.remove_tag("Relocate")
+            else:
+                if 'Relocate' not in self.tags:
+                    self.add_tag("Relocate")
         self.check_private_tracker()
         if 'Seeded' in self.tags:
             self.seeded = True
         else:
             if self.seeding_time >= self.seed_for:
                 self.seeded = True
-        if self.torrent_data['amount_left'] == 0:
-            self.complete = True
 
-    # Get the torrent ratio and check if it's above the seeder ratio as set in config
-    def ratio_check(self):
+    # Check seeding data against private trackers
+    def seeding_check(self):
+        if not self.private_tracker: # Raise an error as this function is only relevant to private tracker torrents
+            raise Exception("Torrent is not from a private tracker")
+        if not self.complete: # Raise an error as this function is only relevant to completed torrents
+            raise Exception("Torrent is not complete")
+
         self.ratio = self.torrent_data['ratio']
         last_active_date = datetime.datetime.fromtimestamp(self.last_active, tz=pytz.timezone('Australia/Sydney'))
         current_time = datetime.datetime.now(tz=pytz.timezone('Australia/Sydney'))
         time_diff = (current_time - last_active_date).days
-        print(f"Time diff: {time_diff}")
-
-        if "Seeder" in self.tags:
-            self.handle_seeder(time_diff)
-        else:
-            self.handle_non_seeder(time_diff)
-
-    def handle_seeder(self, time_diff):
-        if time_diff >= 7:
-            self.remove_tag("Seeder")
-            self.add_tag("Inactive")
-            return False
-        return True
-
-    def handle_non_seeder(self, time_diff):
-        if self.private_tracker:
+        if "Seeder" in self.tags: # If torrent is already marked as a seeder, check if it's still active
+            if time_diff >= 7:
+                self.remove_tag("Seeder")
+                self.add_tag("Inactive")
+            else:
+                self.seeder = True
+        else: # If torrent is not already marked as a seeder, check if should be.
             if self.ratio >= self.seeder_ratio and time_diff <= 7:
                 if "Inactive" in self.tags:
                     self.remove_tag("Inactive")
                 self.add_tag("Seeder")
-                return True
+                self.seeder = True
             else:
-                if time_diff >= 7:
-                    self.add_tag("Inactive")
-                return False
-        else:
-            return False
+                self.add_tag("Inactive")
 
     # Lookup the torrent files in the torrent, and get the media files
     def get_torrent_files(self):
@@ -115,7 +112,7 @@ class Torrent:
 
     # Get the media type and save location from config
     def get_media_type(self):
-        media_types = load_config('media_types')
+        media_types = self.config.media_types
         t_type = None
         s_location = None
         for media_type in media_types:
@@ -153,7 +150,7 @@ class Torrent:
 
     # Check if the torrent is from a private tracker and load the seeding time from config
     def check_private_tracker(self):
-        private_trackers = load_config('private_trackers')
+        private_trackers = self.config.private_trackers
         for tracker in private_trackers:
             if private_trackers[tracker]['torrent_tag'] in self.tags:
                 self.seed_for = private_trackers[tracker]['seeding_time']

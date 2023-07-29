@@ -149,7 +149,7 @@ total_size = 0
 if torrents_to_delete:
     depth = log_text(0, f"Deleting {len(torrents_to_delete)} torrents...")
     for torrent in torrents_to_delete:
-        # torrent.delete()
+        torrent.delete()
         log_text(depth, f"DELETED: {torrent.name}")
         deleted_torrents += 1
         total_size += torrent.size

@@ -57,6 +57,7 @@ class Torrent:
         self.size = self.torrent_data['total_size']
         self.last_active = self.torrent_data['last_activity']
         self.get_torrent_tags()
+        self.ratio = self.torrent_data['ratio']
         if self.torrent_data['amount_left'] == 0:
             self.complete = True
             if 'Moved' in self.tags:
@@ -80,7 +81,6 @@ class Torrent:
         if not self.complete: # Raise an error as this function is only relevant to completed torrents
             raise Exception("Torrent is not complete")
 
-        self.ratio = self.torrent_data['ratio']
         last_active_date = datetime.datetime.fromtimestamp(self.last_active, tz=pytz.timezone('Australia/Sydney'))
         current_time = datetime.datetime.now(tz=pytz.timezone('Australia/Sydney'))
         time_diff = (current_time - last_active_date).days

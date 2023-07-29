@@ -98,7 +98,7 @@ for tracker in torrents.torrents_by_tracker.keys():
 
 
 depth = 0
-deleted_torrents = 0
+deletable_torrents = 0
 
 torrents_to_delete = []
 
@@ -133,30 +133,32 @@ for tracker in torrents.torrents_by_tracker.keys():
         num_deletable_torrents = torrent_difference
 
     if num_deletable_torrents > 0:
-        depth = log_text(depth, f"Too many torrents for {tracker}, deleting least seeded torrents...")
         tracker_torrents.sort(key=lambda x: x.ratio)
-        for torrent in tracker_torrents[tracker]:
+        for torrent in tracker_torrents:
             if torrent.deletable:
-                if deleted_torrents < num_deletable_torrents:
+                if deletable_torrents < num_deletable_torrents:
                     torrents_to_delete.append(torrent)
+                    deletable_torrents += 1
                 else:
                     break
             else:
                 continue
 
+deleted_torrents = 0
 # Delete the torrents
 total_size = 0
 if torrents_to_delete:
     depth = log_text(0, f"Deleting {len(torrents_to_delete)} torrents...")
     for torrent in torrents_to_delete:
-        torrent.delete()
+        # torrent.delete()
         log_text(depth, f"DELETED: {torrent.name}")
         deleted_torrents += 1
         total_size += torrent.size
 
 
 # Wrap things up with a summary
-if not deleted_torrents:
+if not deletable_torrents:
     log_text(0, "No torrents deleted.")
 else:
-    log_text(0, f"{deleted_torrents} torrents deleted. {total_size/1024/1024/1024} GB freed.")
+    total_size = round((total_size / 1024 / 1024 / 1024), 2)
+    log_text(0, f"{deletable_torrents} torrents deleted. {total_size} GB freed.")

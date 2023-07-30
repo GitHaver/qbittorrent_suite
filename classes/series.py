@@ -30,7 +30,7 @@ class Series:
         self.torrent = torrent
         self.series_name = None
         self.episodes = []
-        self.seasons = None
+        self.seasons = {}
 
         self.parse_episodes(series_files)
 

@@ -14,6 +14,8 @@ class Series:
             self.season_number = None
             self.episode_number = None
             self.episode_name = None
+            self.file_extension = None
+            self.cleaned_name = None
             self.parse_episode_name()
 
         def parse_episode_name(self):
@@ -29,6 +31,9 @@ class Series:
                 self.season_number = match.group(2)
                 self.episode_number = match.group(3)
                 self.episode_name = match.group(4)
+                self.file_extension = os.path.splitext(self.filename)[1]
+                self.cleaned_name = (f"{self.series_name} S{self.season_number}"
+                                     f"E{self.episode_number} {self.episode_name}{self.file_extension}")
             pass
 
     def __init__(self, series_files, torrent):

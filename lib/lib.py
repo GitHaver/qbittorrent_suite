@@ -26,8 +26,10 @@ def log_text(depth, text, indent=True, reset=False):
     print(f"{prepend}{text}")
     if indent:
         return depth + 1
-    elif reset:
+    if reset:
         return 0
+    else:
+        return depth
 
 
 def log_error(depth, error):

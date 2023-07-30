@@ -6,10 +6,10 @@ import pytz
 from classes.series import Series
 
 class Torrent:
-    def __init__(self, torrent_data, qbit_client, config):
+    def __init__(self, torrent_data, client, config):
         self.hash = torrent_data['hash']
         self.name = torrent_data['name']
-        self.client = qbit_client
+        self.client = client
 
         self.config = config
         self.seeder_ratio = self.config.seeder_ratio

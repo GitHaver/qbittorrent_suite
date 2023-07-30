@@ -2,8 +2,9 @@ import os
 import sys
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 sys.path.append(parent_dir)
-from lib.lib import load_config, connect_to_qbittorrent, log_text, format_current_time
+from lib.lib import connect_to_qbittorrent, log_text, format_current_time
 from classes.torrents import Torrent
+from classes.config import Config
 
 torrent_hash = sys.argv[1]
 torrent_name = sys.argv[2]
@@ -12,13 +13,13 @@ depth = log_text(0, f"{format_current_time()}: Starting file manager...")
 depth = log_text(depth, f"Torrent hash: {torrent_hash}", indent=False)
 depth = log_text(depth, f"Torrent name: {torrent_name}", reset=True)
 
-config = load_config()
-conn_info = config['connection_info']
-qbit_client = connect_to_qbittorrent(**conn_info)
+config = Config()
+client = connect_to_qbittorrent(**config.connection_info)
 
 depth = log_text(depth, "Reading torrent data...")
 
-torrent = Torrent(torrent_hash, qbit_client)
+raw_torrent = client.torrents_info(hashes=torrent_hash)[0]
+torrent = Torrent(raw_torrent, client, config)
 
 torrent.get_media_type()
 

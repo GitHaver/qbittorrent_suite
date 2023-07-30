@@ -6,58 +6,56 @@ import pytz
 from classes.series import Series
 
 class Torrent:
-    def __init__(self, t_hash, qbit_client, config):
-        self.hash = t_hash
-        self.name = None
-        self.qbit_client = qbit_client
+    def __init__(self, torrent_data, qbit_client, config):
+        self.hash = torrent_data['hash']
+        self.name = torrent_data['name']
+        self.client = qbit_client
 
         self.config = config
         self.seeder_ratio = self.config.seeder_ratio
 
-        self.torrent_data = None
-        # basic attributes set in set_torrent_data
-        self.seeding_time = None
-        self.size = None
-        self.ratio = None
-        self.containing_dir = None
+        self.torrent_data = torrent_data
+
+        # basic attributes that can be set with raw torrent data
+        self.seeding_time = self.torrent_data['seeding_time']
+        self.size = self.torrent_data['size']
+        self.ratio = self.torrent_data['ratio']
+        self.containing_dir = self.torrent_data['content_path']
+        self.save_path = self.torrent_data['save_path']
+        self.last_active = self.torrent_data['last_activity']
+
+        # Get torrent tag data
         self.tags = None
-        self.moved = False
+        self.get_torrent_tags()
+
+        # Check if torrent is complete and has been moved
         self.complete = False
-        self.last_active = None
+        self.moved = False
+        self.check_complete()
 
-        # attributes used for moving torrents
-        self.media_type = None  # Movie, TV, Anime, Music or Other
-        self.media_location = None  # location to move media files to
-        self.type = None  # files or archives
-
-        self.files = None
-        self.media_files = None
-        self.archives = None
-
-        # attributes used for checking seeding
+        # Attributes relating to private_tracker
         self.seeded = False
-        self.seeder = False
         self.private_tracker = None
         self.seed_for = 0
+        self.check_private_tracker()
+
+        self.seeder = False
+        if self.private_tracker:
+            self.seeding_check()
 
         self.deletable = False
 
-        # set the basic attributes
-        self.set_torrent_data()
+    def get_torrent_tags(self):
+        if self.tags is None:
+            self.tags = self.torrent_data['tags'].split(', ')
+        else:
+            self.get_torrent_data()
+            self.tags = self.torrent_data['tags'].split(', ')
 
-    # Only refreshes the torrent data that is needed as a baseline.
-    def set_torrent_data(self):
-        self.torrent_data = self.qbit_client.torrents_info(torrent_hashes=self.hash)[0]
+    def get_torrent_data(self):
+        self.torrent_data = self.client.torrents_info(torrent_hashes=self.hash)[0]
 
-        if self.name is None:
-            self.name = self.torrent_data['name']
-
-        self.containing_dir = self.torrent_data['content_path']
-        self.seeding_time = self.torrent_data['seeding_time']
-        self.size = self.torrent_data['total_size']
-        self.last_active = self.torrent_data['last_activity']
-        self.get_torrent_tags()
-        self.ratio = self.torrent_data['ratio']
+    def check_complete(self):
         if self.torrent_data['amount_left'] == 0:
             self.complete = True
             if 'Moved' in self.tags:
@@ -67,7 +65,13 @@ class Torrent:
             else:
                 if 'Relocate' not in self.tags:
                     self.add_tag("Relocate")
-        self.check_private_tracker()
+
+    def check_private_tracker(self):
+        private_trackers = self.config.private_trackers
+        for tracker in private_trackers:
+            if private_trackers[tracker]['torrent_tag'] in self.tags:
+                self.seed_for = private_trackers[tracker]['seeding_time']
+                self.private_tracker = tracker
         if 'Seeded' in self.tags:
             self.seeded = True
         else:
@@ -130,34 +134,25 @@ class Torrent:
 
     # Mark the torrent with error, used for moving files
     def mark_error(self):
-        self.qbit_client.torrents_add_tags(torrent_hashes=self.hash, tags="Error")
+        self.client.torrents_add_tags(torrent_hashes=self.hash, tags="Error")
 
     # Add a tag to the torrent
     def add_tag(self, tag):
-        self.qbit_client.torrents_add_tags(torrent_hashes=self.hash, tags=tag)
+        self.client.torrents_add_tags(torrent_hashes=self.hash, tags=tag)
         self.get_torrent_tags()
 
     def remove_tag(self, tag):
-        self.qbit_client.torrents_remove_tags(torrent_hashes=self.hash, tags=tag)
+        self.client.torrents_remove_tags(torrent_hashes=self.hash, tags=tag)
         self.get_torrent_tags()
 
     # Get the torrent tags
-    def get_torrent_tags(self):
-        torrent_info = self.qbit_client.torrents_info(torrent_hashes=self.hash)[0]
-        tags = torrent_info['tags']
-        tags = tags.split(', ')
-        self.tags = tags
+
 
     # Check if the torrent is from a private tracker and load the seeding time from config
-    def check_private_tracker(self):
-        private_trackers = self.config.private_trackers
-        for tracker in private_trackers:
-            if private_trackers[tracker]['torrent_tag'] in self.tags:
-                self.seed_for = private_trackers[tracker]['seeding_time']
-                self.private_tracker = tracker
+
 
     def delete(self):
-        self.qbit_client.torrents_delete(torrent_hashes=self.hash, delete_files=True)
+        self.client.torrents_delete(torrent_hashes=self.hash, delete_files=True)
 
     def move(self):
         def move_series():

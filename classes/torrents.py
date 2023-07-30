@@ -8,7 +8,7 @@ class Torrents:
 
         self.torrents_by_tracker = {}
         for raw_torrent in self.raw_torrents:
-            torrent = Torrent(raw_torrent['hash'], qbit_client, config)
+            torrent = Torrent(raw_torrent, qbit_client, config)
             if torrent.private_tracker:
                 if torrent.private_tracker not in self.torrents_by_tracker:
                     self.torrents_by_tracker[torrent.private_tracker] = [torrent]
@@ -27,4 +27,7 @@ if __name__ == '__main__':
     from lib.lib import connect_to_qbittorrent
     _qbit_client = connect_to_qbittorrent(**_config.connection_info)
     _torrents = Torrents(_qbit_client, _config)
-    print(_torrents.torrents_by_tracker)
+    for _tracker in _torrents.torrents_by_tracker:
+        print(_tracker)
+        for _torrent in _torrents.torrents_by_tracker[_tracker]:
+            print(f"\t{_torrent.name}")

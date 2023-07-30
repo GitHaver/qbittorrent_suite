@@ -21,6 +21,11 @@ class Series:
             match = re.search(pattern, self.filename, re.IGNORECASE)
             if match:
                 self.series_name = match.group(1)
+                if self.series_name.endswith("."):
+                    self.series_name = self.series_name[:-1]
+                if " " not in self.series_name:
+                    self.series_name = self.series_name.replace(".", " ")
+                    self.series_name = self.series_name.replace("_", " ")
                 self.season_number = match.group(2)
                 self.episode_number = match.group(3)
                 self.episode_name = match.group(4)

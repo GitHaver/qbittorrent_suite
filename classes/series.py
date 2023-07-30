@@ -29,7 +29,7 @@ class Series:
     def __init__(self, series_files, torrent):
         self.torrent = torrent
         self.series_name = None
-        self.episodes = None
+        self.episodes = []
         self.seasons = None
 
         self.parse_episodes(series_files)

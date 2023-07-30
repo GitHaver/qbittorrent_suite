@@ -167,7 +167,7 @@ class Torrent:
             else:
                 delete = True
 
-            series = Series(files)
+            series = Series(files, self)
             for season in series.seasons:
                 season_path = os.path.join(self.media_location, series.series_name, season)
                 for file in season:

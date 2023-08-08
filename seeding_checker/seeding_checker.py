@@ -135,7 +135,7 @@ for tracker in torrents.torrents_by_tracker.keys():
         num_deletable_torrents = torrent_difference
 
     if num_deletable_torrents > 0:
-        tracker_torrents.sort(key=lambda x: x.ratio)
+        tracker_torrents.sort(key=lambda x: x.size, reverse=True)
         for torrent in tracker_torrents:
             if torrent.deletable:
                 if deletable_torrents < num_deletable_torrents:

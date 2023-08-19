@@ -64,37 +64,23 @@ private_trackers = config.private_trackers  # Dict of private trackers info such
 
 
 for tracker in torrents.torrents_by_tracker.keys():
-    if tracker == 'non-private':
-        inner_depth = log_text(initial_depth, f"Checking non-private torrents...")
-        for torrent in torrents.torrents_by_tracker[tracker]:
-            depth = log_text(inner_depth, f"{torrent.name}")
+    inner_depth = log_text(initial_depth, f"Checking {tracker} torrents...")
+    for torrent in torrents.torrents_by_tracker[tracker]:
+        depth = log_text(inner_depth, f"{torrent.name}")
 
-            if not check_complete(torrent, depth):
-                continue
+        if not check_complete(torrent, depth):
+            continue
 
-            if not check_moved(torrent, depth):
-                continue
+        if not check_seeded(torrent, depth):
+            continue
 
-            set_deletable(torrent, depth)
+        if not check_moved(torrent, depth):
+            continue
 
-    else:
-        inner_depth = log_text(initial_depth, f"Checking {tracker} torrents...")
-        for torrent in torrents.torrents_by_tracker[tracker]:
-            depth = log_text(inner_depth, f"{torrent.name}")
+        if not check_seeder(torrent, depth):
+            continue
 
-            if not check_complete(torrent, depth):
-                continue
-
-            if not check_seeded(torrent, depth):
-                continue
-
-            if not check_moved(torrent, depth):
-                continue
-
-            if not check_seeder(torrent, depth):
-                continue
-
-            set_deletable(torrent, depth)
+        set_deletable(torrent, depth)
 
 
 depth = 0
@@ -108,10 +94,7 @@ depth = log_text(depth, f"Checking torrents by tracker...")
 for tracker in torrents.torrents_by_tracker.keys():
     depth = log_text(initial_depth, f"Checking {tracker}...")
     tracker_torrents = torrents.torrents_by_tracker[tracker]
-    if tracker == 'non-private':
-        torrents_to_seed = 0
-    else:
-        torrents_to_seed = private_trackers[tracker]['max_torrents']
+    torrents_to_seed = private_trackers[tracker]['max_torrents']
 
     log_text(depth, f"Min torrents for tracker: {torrents_to_seed}")
 
@@ -129,9 +112,9 @@ for tracker in torrents.torrents_by_tracker.keys():
 
     if torrent_difference > len(tracker_deletable):
         num_deletable_torrents = len(tracker_deletable)
-        log_text(depth-1, f"There are {num_deletable_torrents} deletable torrents within {torrents_to_seed}.")
+        log_text(depth-1, f"There are {num_deletable_torrents} deletable torrents within {torrents_to_seed}.\n")
     else:
-        log_text(depth-1, f"There are {torrent_difference} torrents to delete within the limit of {torrents_to_seed}.")
+        log_text(depth-1, f"There are {torrent_difference} torrents to delete within the limit of {torrents_to_seed}\n")
         num_deletable_torrents = torrent_difference
 
     if num_deletable_torrents > 0:
@@ -160,7 +143,7 @@ if torrents_to_delete:
 
 # Wrap things up with a summary
 if not deletable_torrents:
-    log_text(0, "No torrents deleted.")
+    log_text(0, "\nNo torrents deleted.")
 else:
     total_size = round((total_size / 1024 / 1024 / 1024), 2)
-    log_text(0, f"{deletable_torrents} torrents deleted. {total_size} GB freed.")
+    log_text(0, f"\n{deletable_torrents} torrents deleted. {total_size} GB freed.")

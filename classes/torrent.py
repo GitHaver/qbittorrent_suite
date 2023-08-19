@@ -40,7 +40,7 @@ class Torrent:
         self.check_private_tracker()
 
         self.seeder = False
-        if self.tracker and self.complete:
+        if self.complete:
             self.seeding_check()
 
         self.deletable = False

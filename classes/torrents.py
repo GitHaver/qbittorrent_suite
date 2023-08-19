@@ -9,16 +9,11 @@ class Torrents:
         self.torrents_by_tracker = {}
         for raw_torrent in self.raw_torrents:
             torrent = Torrent(raw_torrent, qbit_client, config)
-            if torrent.private_tracker:
-                if torrent.private_tracker not in self.torrents_by_tracker:
-                    self.torrents_by_tracker[torrent.private_tracker] = [torrent]
-                else:
-                    self.torrents_by_tracker[torrent.private_tracker].append(torrent)
+            if torrent.tracker not in self.torrents_by_tracker:
+                self.torrents_by_tracker[torrent.tracker] = [torrent]
             else:
-                if 'non-private' not in self.torrents_by_tracker:
-                    self.torrents_by_tracker['non-private'] = [torrent]
-                else:
-                    self.torrents_by_tracker['non-private'].append(torrent)
+                self.torrents_by_tracker[torrent.tracker].append(torrent)
+
 
 
 if __name__ == '__main__':

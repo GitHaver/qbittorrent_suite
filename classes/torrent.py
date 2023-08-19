@@ -35,12 +35,12 @@ class Torrent:
 
         # Attributes relating to private_tracker
         self.seeded = False
-        self.private_tracker = None
+        self.tracker = None
         self.seed_for = 0
         self.check_private_tracker()
 
         self.seeder = False
-        if self.private_tracker:
+        if self.tracker and self.complete:
             self.seeding_check()
 
         self.deletable = False
@@ -70,8 +70,16 @@ class Torrent:
         private_trackers = self.config.private_trackers
         for tracker in private_trackers:
             if private_trackers[tracker]['torrent_tag'] in self.tags:
+                self.tracker = tracker
                 self.seed_for = private_trackers[tracker]['seeding_time']
-                self.private_tracker = tracker
+            elif private_trackers[tracker]['source_tag'] in self.name:
+                self.tracker = tracker
+                self.seed_for = private_trackers[tracker]['seeding_time']
+        if not self.tracker:
+            self.seed_for = 0
+            if 'Public' not in self.tags:
+                self.add_tag("Public")
+
         if 'Seeded' in self.tags:
             self.seeded = True
         else:
@@ -80,7 +88,7 @@ class Torrent:
 
     # Check seeding data against private trackers
     def seeding_check(self):
-        if not self.private_tracker: # Raise an error as this function is only relevant to private tracker torrents
+        if not self.tracker: # Raise an error as this function is only relevant to private tracker torrents
             raise Exception("Torrent is not from a private tracker")
         if not self.complete: # Raise an error as this function is only relevant to completed torrents
             raise Exception("Torrent is not complete")
@@ -145,12 +153,6 @@ class Torrent:
         self.client.torrents_remove_tags(torrent_hashes=self.hash, tags=tag)
         self.get_torrent_tags()
 
-    # Get the torrent tags
-
-
-    # Check if the torrent is from a private tracker and load the seeding time from config
-
-
     def delete(self):
         self.client.torrents_delete(torrent_hashes=self.hash, delete_files=True)
 
@@ -162,7 +164,7 @@ class Torrent:
                 files = self.media_files
             elif self.type == "archives":
                 files = self.archives
-            if self.private_tracker is not None and self.seeded:
+            if self.tracker is not None and self.seeded:
                 pass
             else:
                 delete = True
@@ -186,7 +188,7 @@ class Torrent:
 
         def move_movie():
             delete = False
-            if self.private_tracker is not None and self.seeded:
+            if self.tracker is not None and self.seeded:
                 pass
             else:
                 delete = True

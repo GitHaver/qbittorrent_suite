@@ -3,7 +3,7 @@ import shutil
 import rarfile
 import datetime
 import pytz
-from classes.series import Series
+from classes.Series import Series
 
 class Torrent:
     def __init__(self, torrent_data, client, config):
@@ -67,14 +67,17 @@ class Torrent:
                     self.add_tag("Relocate")
 
     def check_private_tracker(self):
+        print("----", self.name)
         private_trackers = self.config.private_trackers
         for tracker in private_trackers:
             if private_trackers[tracker]['torrent_tag'] in self.tags:
                 self.tracker = tracker
                 self.seed_for = private_trackers[tracker]['seeding_time']
+                break
             elif private_trackers[tracker]['source_tag'] in self.name:
                 self.tracker = tracker
                 self.seed_for = private_trackers[tracker]['seeding_time']
+                break
         if not self.tracker:
             self.seed_for = 0
             if 'Public' not in self.tags:
@@ -111,35 +114,6 @@ class Torrent:
             else:
                 self.add_tag("Inactive")
 
-    # Lookup the torrent files in the torrent, and get the media files
-    def get_torrent_files(self):
-        self.files = [os.path.join(root, file) for root, dirs, files in os.walk(self.containing_dir) for file in files]
-
-        self.media_files = [file for file in self.files
-                            if file.endswith(('.mkv', '.mp4', '.avi', '.mp3', '.flac'))
-                            and "sample" not in file.lower()]
-        self.archives = [file for file in self.files
-                         if file.endswith(('.rar', '.zip'))
-                         and "sample" not in file.lower()]
-
-    # Get the media type and save location from config
-    def get_media_type(self):
-        media_types = self.config.media_types
-        t_type = None
-        s_location = None
-        for media_type in media_types:
-            if media_type['tag'] in self.tags:
-                t_type = media_type['tag']
-                s_location = media_type['folder']
-                break
-        if s_location == "N/A":
-            self.add_tag("Manual")
-        if t_type is None:
-            self.mark_error()
-
-        self.media_type = t_type
-        self.media_location = s_location
-
     # Mark the torrent with error, used for moving files
     def mark_error(self):
         self.client.torrents_add_tags(torrent_hashes=self.hash, tags="Error")
@@ -155,67 +129,3 @@ class Torrent:
 
     def delete(self):
         self.client.torrents_delete(torrent_hashes=self.hash, delete_files=True)
-
-    def move(self):
-        def move_series():
-            delete = False
-            files = None
-            if self.type == "files":
-                files = self.media_files
-            elif self.type == "archives":
-                files = self.archives
-            if self.tracker is not None and self.seeded:
-                pass
-            else:
-                delete = True
-
-            series = Series(files, self)
-            for season in series.seasons:
-                season_path = os.path.join(self.media_location, series.series_name, season)
-                for file in season:
-                    if self.type == "files":
-                        if delete:
-                            shutil.move(file, season_path)
-                        else:
-                            shutil.copy(file, season_path)
-                    elif self.type == "archives":
-                        rar = rarfile.RarFile(file)
-                        rar.extractall(season_path)
-
-            self.add_tag("Moved")
-            if delete:
-                self.delete()
-
-        def move_movie():
-            delete = False
-            if self.tracker is not None and self.seeded:
-                pass
-            else:
-                delete = True
-            if self.type == "files":
-                if delete:
-                    for file in self.media_files:
-                        shutil.move(file, self.media_location)
-                else:
-                    for file in self.media_files:
-                        shutil.copy(file, self.media_location)
-            elif self.type == "archives":
-                for archive in self.archives:
-                    rar = rarfile.RarFile(archive)
-                    rar.extractall(self.media_location)
-
-            self.add_tag("Moved")
-            if delete:
-                self.delete()
-
-        def move_music():
-            pass
-
-        if self.media_type == "TV" or self.media_type == "Anime":
-            move_series()
-        elif self.media_type == "Movie":
-            move_movie()
-        elif self.media_type == "Music":
-            move_music()
-        else:
-            pass

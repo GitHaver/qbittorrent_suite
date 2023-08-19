@@ -3,8 +3,8 @@ import sys
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 sys.path.append(parent_dir)
 from lib.lib import connect_to_qbittorrent, log_text, format_current_time
-from classes.torrents import Torrents
-from classes.config import Config
+from classes.Torrents import Torrents
+from classes.Config import Config
 
 def check_complete(f_torrent, f_depth):
     if not f_torrent.complete:

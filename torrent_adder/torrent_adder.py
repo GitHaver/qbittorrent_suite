@@ -1,6 +1,6 @@
 import sys
 import qbittorrentapi
-from classes.config import Config
+from classes.Config import Config
 
 is_iptorrents = False
 try:

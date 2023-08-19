@@ -3,8 +3,8 @@ import sys
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 sys.path.append(parent_dir)
 from lib.lib import connect_to_qbittorrent, log_text, format_current_time
-from classes.torrents import Torrent
-from classes.config import Config
+from classes.Torrents import Torrent
+from classes.Config import Config
 
 torrent_hash = sys.argv[1]
 torrent_name = sys.argv[2]

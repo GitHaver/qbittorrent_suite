@@ -1,4 +1,4 @@
-from classes.torrent import Torrent
+from classes.Torrent import Torrent
 
 
 class Torrents:
@@ -17,7 +17,7 @@ class Torrents:
 
 
 if __name__ == '__main__':
-    from classes.config import Config
+    from classes.Config import Config
     _config = Config()
     from lib.lib import connect_to_qbittorrent
     _qbit_client = connect_to_qbittorrent(**_config.connection_info)

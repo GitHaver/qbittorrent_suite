@@ -67,7 +67,6 @@ class Torrent:
                     self.add_tag("Relocate")
 
     def check_private_tracker(self):
-        print("----", self.name)
         private_trackers = self.config.private_trackers
         for tracker in private_trackers:
             if private_trackers[tracker]['torrent_tag'] in self.tags:
@@ -80,8 +79,8 @@ class Torrent:
                 break
         if not self.tracker:
             self.seed_for = 0
-            if 'Public' not in self.tags:
-                self.add_tag("Public")
+            if 'PUBLIC' not in self.tags:
+                self.add_tag("PUBLIC")
 
         if 'Seeded' in self.tags:
             self.seeded = True

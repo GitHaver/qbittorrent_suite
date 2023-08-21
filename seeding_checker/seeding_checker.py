@@ -104,17 +104,16 @@ for tracker in torrents.torrents_by_tracker.keys():
     log_text(depth, f"Deletable torrents for tracker: {len(tracker_deletable)}")
 
     torrent_difference = len(tracker_torrents) - torrents_to_seed
-    log_text(depth, f"Deletable torrents within limit: {torrent_difference}")
 
     if torrent_difference <= 0:
-        log_text(depth-1, f"Torrent count is within the limit for {tracker}.")
+        log_text(depth-1, f"Torrent count is within the limit for {tracker}.\n")
         continue
 
     if torrent_difference > len(tracker_deletable):
         num_deletable_torrents = len(tracker_deletable)
-        log_text(depth-1, f"There are {num_deletable_torrents} deletable torrents within {torrents_to_seed}.\n")
+        log_text(depth-1, f"There are {num_deletable_torrents} deletable torrents for {tracker}.\n")
     else:
-        log_text(depth-1, f"There are {torrent_difference} torrents to delete within the limit of {torrents_to_seed}\n")
+        log_text(depth-1, f"There are {torrent_difference} torrents to delete for {tracker}\n")
         num_deletable_torrents = torrent_difference
 
     if num_deletable_torrents > 0:
